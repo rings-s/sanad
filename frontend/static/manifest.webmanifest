@@ -1,0 +1,17 @@
+{
+	"name": "Sanad — Islamic Knowledge",
+	"short_name": "Sanad",
+	"description": "Intentional Islamic learning: posts, videos, audios, and answers from trusted scholars.",
+	"start_url": "/feed",
+	"scope": "/",
+	"display": "standalone",
+	"orientation": "portrait",
+	"background_color": "#fafaf9",
+	"theme_color": "#047857",
+	"lang": "ar",
+	"dir": "auto",
+	"categories": ["education", "lifestyle", "books"],
+	"icons": [
+		{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+	]
+}

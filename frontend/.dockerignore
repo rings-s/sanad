@@ -1,0 +1,22 @@
+node_modules/
+.svelte-kit/
+build/
+.wrangler/
+.cloudflare/
+.vercel/
+
+# Secrets & local config
+.env
+.env.*
+!.env.example
+
+# Tooling / artifacts
+.git/
+.github/
+.vscode/
+.idea/
+test-results/
+playwright-report/
+*.log
+.DS_Store
+worker-configuration.d.ts

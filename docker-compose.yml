@@ -1,0 +1,159 @@
+# docker-compose.yml — full backend + frontend stack
+#
+# Usage:
+#   cp .env.example .env        # fill in your values (DJANGO_SECRET_KEY,
+#                               # POSTGRES_PASSWORD, … are required)
+#   docker compose up --build
+#
+# Services: frontend (SvelteKit/Node SSR), api (Django/ASGI), celery worker +
+# beat, postgres, redis. The api runs with production settings, which enforce
+# HTTPS redirects (SECURE_SSL_REDIRECT) and secure cookies — put a TLS-terminating
+# reverse proxy (nginx/traefik/caddy) in front for anything beyond local smoke
+# tests, and have it forward `X-Forwarded-Proto: https`.
+#
+# For local dev without Docker:
+#   uv run python manage.py runserver   (uses SQLite, no Redis needed)
+
+# Shared backend environment — reused by api, celery worker/beat, and migrate.
+x-backend-env: &backend-env
+  DJANGO_SETTINGS_MODULE: backend.settings.production
+  DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?set DJANGO_SECRET_KEY in .env}
+  DATABASE_URL: postgres://${POSTGRES_USER:-sanad}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-sanad}
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/1
+  CELERY_RESULT_BACKEND: redis://redis:6379/2
+  ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+  AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-true}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
+  AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+  AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  AWS_STORAGE_BUCKET_NAME: ${AWS_STORAGE_BUCKET_NAME:-}
+  AWS_S3_REGION_NAME: ${AWS_S3_REGION_NAME:-us-east-1}
+  AWS_SES_REGION_NAME: ${AWS_SES_REGION_NAME:-us-east-1}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-noreply@sanad.app}
+  SHEIKH_NOTIFICATION_EMAIL: ${SHEIKH_NOTIFICATION_EMAIL:-}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+
+services:
+
+  # ── Frontend (SvelteKit, Node SSR) ────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Baked into the client bundle at build time — rebuild to change it.
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    environment:
+      # adapter-node reads ORIGIN to validate form posts / set absolute URLs.
+      ORIGIN: ${FRONTEND_URL:-http://localhost:3000}
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # ── Migrations (one-shot, runs before the API serves) ─────────────────────────
+  migrate:
+    build:
+      context: .
+      target: production
+    command: python manage.py migrate --noinput
+    environment: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  # ── Django API ───────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      target: production
+    environment: *backend-env
+    volumes:
+      # Persist locally-stored uploads when S3 is not configured.
+      - media_data:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # ── Celery worker ─────────────────────────────────────────────────────────────
+  celery-worker:
+    build:
+      context: .
+      target: production
+    command: >
+      celery -A backend worker
+      --loglevel=info
+      --concurrency=4
+      --queues=default
+    environment: *backend-env
+    volumes:
+      - media_data:/app/media
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # ── Celery beat (scheduler) ───────────────────────────────────────────────────
+  celery-beat:
+    build:
+      context: .
+      target: production
+    command: celery -A backend beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment: *backend-env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────────
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-sanad}
+      POSTGRES_USER: ${POSTGRES_USER:-sanad}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sanad}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ── Redis ─────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  media_data:

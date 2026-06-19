@@ -1,0 +1,499 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+/* ── Class-based dark mode (Tailwind v4) ───────────────────────────────────── */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+@theme {
+	--font-sans: 'Outfit', system-ui, sans-serif;
+	--font-arabic: 'Cairo', system-ui, sans-serif;
+
+	/* Editorial display type — Fraunces (EN) / Amiri classical Naskh (AR).
+	   Used only for hero & auth headings to give the entry surfaces a
+	   premium, manuscript-like character. */
+	--font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+	--font-display-ar: 'Amiri', 'Cairo', serif;
+
+	/* Brand */
+	--color-emerald-50: #ecfdf5;
+	--color-emerald-100: #d1fae5;
+	--color-emerald-200: #a7f3d0;
+	--color-emerald-600: #059669;
+	--color-emerald-700: #047857;
+	--color-emerald-800: #065f46;
+	--color-emerald-900: #064e3b;
+
+	/* Antique-gold illumination accent — used *sparingly* for hairlines and
+	   ornament only (never for body text), evoking gilded manuscripts. */
+	--color-gold-200: #ecdcad;
+	--color-gold-300: #dcc187;
+	--color-gold-400: #c4a35a;
+	--color-gold-500: #a8863f;
+
+	/* Material Motion easing — all transitions in the app use these */
+	--ease-standard: cubic-bezier(0.2, 0, 0, 1);
+	--ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+	--ease-accelerate: cubic-bezier(0.3, 0, 1, 1);
+	--ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+	/* Duration scale — kept tight so nothing ever feels sluggish */
+	--duration-instant: 100ms;
+	--duration-fast: 150ms;
+	--duration-base: 200ms;
+	--duration-slow: 300ms;
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+html {
+	@apply bg-stone-50 dark:bg-stone-950 text-stone-900 dark:text-stone-50;
+	scroll-behavior: smooth;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+html:lang(ar),
+html[dir='rtl'] {
+	font-family: 'Cairo', system-ui, sans-serif;
+}
+html:lang(en),
+html[dir='ltr'] {
+	font-family: 'Outfit', system-ui, sans-serif;
+}
+
+body {
+	@apply bg-stone-50 dark:bg-stone-950;
+	overscroll-behavior: none;
+}
+
+*:focus-visible {
+	@apply outline-emerald-600 rounded outline-2 outline-offset-2;
+}
+
+::selection {
+	@apply bg-emerald-200 text-emerald-900;
+}
+
+/* Editorial display type — locale-aware. Latin → Fraunces, Arabic → Amiri. */
+.font-display {
+	font-family: var(--font-display);
+	font-optical-sizing: auto;
+	letter-spacing: -0.01em;
+}
+html:lang(ar) .font-display,
+html[dir='rtl'] .font-display {
+	font-family: var(--font-display-ar);
+	letter-spacing: 0;
+}
+
+/* ── Component classes ─────────────────────────────────────────────────────── */
+
+/* Card surface */
+.card {
+	@apply bg-white dark:bg-stone-900 border-stone-200/70 dark:border-stone-800 rounded-2xl border shadow-[0_1px_3px_0_rgba(0,0,0,0.04),0_1px_2px_-1px_rgba(0,0,0,0.04)] dark:shadow-none;
+}
+
+.card-elevated {
+	@apply bg-white dark:bg-stone-900 border-stone-200/70 dark:border-stone-800 rounded-2xl border shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.4)];
+}
+
+/* Buttons */
+.btn-primary {
+	@apply gap-2 min-h-12 bg-emerald-700 text-white px-6 py-2.5 text-sm font-semibold ease-out hover:bg-emerald-800 active:translate-y-0 focus-visible:ring-emerald-500 dark:focus-visible:ring-offset-stone-950 inline-flex items-center justify-center rounded-full border border-transparent transition-all duration-150 will-change-transform hover:-translate-y-px hover:shadow-[0_4px_12px_rgba(4,120,87,0.35)] focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97] active:shadow-none disabled:pointer-events-none disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none;
+}
+
+.btn-ghost {
+	@apply gap-2 min-h-12 text-stone-600 dark:text-stone-400 px-5 py-2.5 text-sm font-medium border-stone-200 dark:border-stone-700 ease-out hover:bg-stone-100 dark:hover:bg-stone-800 hover:text-stone-900 dark:hover:text-stone-100 focus-visible:ring-emerald-500 dark:focus-visible:ring-offset-stone-950 inline-flex items-center justify-center rounded-full border bg-transparent transition-all duration-150 will-change-transform focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+/* Google sign-in — ghost-derived, but with a solid surface so the multicolour
+   "G" stays recognizable and high-contrast in BOTH themes (WCAG 2.2 AA/AAA).
+   min-h-12 = 48px → meets target-size 2.5.8. Never transparent → never disappears. */
+.btn-google {
+	@apply gap-3 min-h-12 px-5 py-3 bg-white dark:bg-stone-800 text-sm font-medium text-stone-700 dark:text-stone-100 border-stone-300 dark:border-stone-600 ease-out hover:bg-stone-50 dark:hover:bg-stone-700 hover:border-stone-400 dark:hover:border-stone-500 focus-visible:ring-emerald-500 dark:focus-visible:ring-offset-stone-950 disabled:bg-stone-50 dark:disabled:bg-stone-800/60 inline-flex w-full items-center justify-center rounded-full border transition-all duration-150 will-change-transform focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:cursor-not-allowed;
+}
+
+/* Form input — min-h-12 = 48px satisfies WCAG 2.5.8 touch target */
+.input-field {
+	@apply bg-white dark:bg-stone-900 border-stone-300 dark:border-stone-700 rounded-xl px-4 py-3 min-h-12 text-stone-900 dark:text-stone-50 text-sm placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-emerald-600 dark:focus:border-emerald-500 focus:ring-emerald-600/10 dark:focus:ring-emerald-500/20 w-full border transition-all duration-150 focus:ring-2 focus:outline-none;
+}
+
+/* Pill badge */
+.badge {
+	@apply gap-1 px-2.5 py-0.5 text-xs font-semibold inline-flex items-center rounded-full tracking-[0.01em];
+}
+
+.badge-accent {
+	@apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300;
+}
+
+.badge-stone {
+	@apply bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400;
+}
+
+/* ── Shimmer skeleton ──────────────────────────────────────────────────────── */
+.shimmer {
+	@apply bg-stone-200 dark:bg-stone-800 rounded relative overflow-hidden;
+}
+.shimmer::after {
+	@apply inset-0 absolute;
+	content: '';
+	background: linear-gradient(
+		90deg,
+		transparent 0%,
+		rgba(255, 255, 255, 0.4) 50%,
+		transparent 100%
+	);
+	animation: shimmer-sweep 1.6s ease-in-out infinite;
+}
+.dark .shimmer::after {
+	background: linear-gradient(
+		90deg,
+		transparent 0%,
+		rgba(255, 255, 255, 0.06) 50%,
+		transparent 100%
+	);
+}
+
+@keyframes shimmer-sweep {
+	0% {
+		transform: translateX(-100%);
+	}
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+/* ── Islamic geometric dot-grid pattern ───────────────────────────────────── */
+.geom-pattern {
+	background-image: radial-gradient(circle at 1px 1px, rgba(4, 120, 87, 0.25) 1px, transparent 0);
+	background-size: 32px 32px;
+}
+
+/* ── Premium entry surfaces (hero + auth) ─────────────────────────────────── */
+
+/* Floating auth card — frosted glass over the sacred backdrop, with a hairline
+   gold "illumination" line across the top edge. Premium depth via layered
+   inset highlight + long ambient shadow. */
+.auth-card {
+	@apply bg-white/85 dark:bg-stone-900/70 border-white/70 dark:border-stone-700/50 backdrop-blur-xl relative w-full overflow-hidden rounded-[1.75rem] border;
+	box-shadow:
+		0 1px 0 0 rgba(255, 255, 255, 0.6) inset,
+		0 24px 60px -28px rgba(15, 30, 24, 0.28);
+}
+.dark .auth-card {
+	box-shadow:
+		0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+		0 32px 80px -32px rgba(0, 0, 0, 0.75);
+}
+.auth-card::before {
+	content: '';
+	@apply top-0 pointer-events-none absolute z-10;
+	inset-inline: 2rem;
+	height: 1px;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		rgba(196, 163, 90, 0.55) 28%,
+		rgba(196, 163, 90, 0.55) 72%,
+		transparent
+	);
+}
+
+/* Responsive masonry for mixed content streams (feed · saved · search · posts).
+   Column count is set per-page with Tailwind `columns-*` utilities; this rule
+   supplies the gutter + clean break behaviour so cards never split across a
+   column boundary. Keeps dense large-screen layouts balanced (Gestalt: common
+   region) without the ragged gaps a fixed grid would create for mixed heights. */
+.masonry {
+	column-gap: 1.25rem;
+}
+.masonry > * {
+	break-inside: avoid;
+	margin-bottom: 1.25rem;
+}
+
+/* ── Page shell ─────────────────────────────────────────────────────────────
+   Single source of truth for page framing so EVERY page is laid out
+   identically: centered, mobile-first single column that fills the width with
+   a minimal, consistent side gutter (16px → 24px → 32px), then opens up on
+   large screens. Width tiers keep reading surfaces narrow and browsing
+   surfaces wide without ever touching the viewport edge. */
+.shell {
+	@apply px-5 sm:px-6 lg:px-8 py-6 sm:py-8 mx-auto w-full;
+}
+/* Browsing surfaces (Discover · Articles · Videos · Listen · Saved) — wider
+   than the old max-w-7xl so dense grids breathe on large/ultra-wide displays,
+   capped so content never sprawls edge-to-edge. */
+.shell-wide {
+	max-width: 96rem; /* 1536px */
+}
+@media (min-width: 1920px) {
+	.shell-wide {
+		max-width: 108rem; /* generous, still guttered, on ultra-wide */
+	}
+}
+/* Reading surfaces (Today · single content) — a calm measure for prose. */
+.shell-read {
+	max-width: 44rem; /* 704px */
+}
+
+/* ── Filter bar ──────────────────────────────────────────────────────────────
+   Centered, consistent search + filter region shared by all list pages. The
+   search field is always horizontally centered with a comfortable max measure;
+   on mobile it spans the full shell width (wide, easy to tap). */
+.filter-bar {
+	@apply mb-7 max-w-2xl mx-auto w-full;
+}
+
+/* Horizontal, swipeable chip rail (mobile) that becomes a centered wrap on
+   wider screens — no clipped chips, no ragged left edge. */
+.chip-rail {
+	@apply -mx-5 gap-2 px-5 sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0 flex scrollbar-none overflow-x-auto;
+}
+
+/* Single filter chip — the one canonical pill used for both content-type and
+   category filters everywhere. */
+.chip {
+	@apply ease-standard focus-visible:ring-emerald-500 gap-1.5 px-3.5 py-2 text-xs font-semibold dark:focus-visible:ring-offset-stone-950 inline-flex shrink-0 items-center rounded-full border whitespace-nowrap transition-all duration-150 focus-visible:ring-2 focus-visible:ring-offset-1;
+}
+.chip-on {
+	@apply border-emerald-700 bg-emerald-700 text-white shadow-[0_2px_8px_rgba(4,120,87,0.28)];
+}
+.chip-off {
+	@apply border-stone-200 bg-white text-stone-600 hover:border-stone-300 hover:text-stone-900 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-400 dark:hover:border-stone-600 dark:hover:text-stone-100;
+}
+
+/* ── Category carousel (mobile) ───────────────────────────────────────────────
+   Turns a chip-rail into a deliberate, swipeable carousel below `sm`: each chip
+   snaps to the start edge, and a gradient mask fades whichever edge still hides
+   off-screen chips (driven by `data-fade`, set in JS). Above `sm` the rail wraps
+   and centres, so snap + mask are switched off and it reads as a tidy chip set. */
+.cat-carousel {
+	scroll-snap-type: x proximity;
+	scroll-padding-inline-start: 1.25rem; /* = .shell px-5 gutter */
+	scroll-behavior: smooth;
+	-webkit-overflow-scrolling: touch;
+	--fade: 1.75rem;
+}
+.cat-carousel > .snap-start {
+	scroll-snap-align: start;
+}
+.cat-carousel[data-fade='end'] {
+	mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+}
+.cat-carousel[data-fade='start'] {
+	mask-image: linear-gradient(to right, transparent, #000 var(--fade));
+}
+.cat-carousel[data-fade='both'] {
+	mask-image: linear-gradient(
+		to right,
+		transparent,
+		#000 var(--fade),
+		#000 calc(100% - var(--fade)),
+		transparent
+	);
+}
+/* RTL: the visual edges swap, so mirror the single-sided masks. */
+[dir='rtl'] .cat-carousel[data-fade='end'] {
+	mask-image: linear-gradient(to left, #000 calc(100% - var(--fade)), transparent);
+}
+[dir='rtl'] .cat-carousel[data-fade='start'] {
+	mask-image: linear-gradient(to left, transparent, #000 var(--fade));
+}
+@media (min-width: 640px) {
+	/* wrapped + centred above sm — no scrolling, so no snap or edge mask */
+	.cat-carousel {
+		scroll-snap-type: none;
+		mask-image: none;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.cat-carousel {
+		scroll-behavior: auto;
+	}
+}
+
+/* Subcategory pill — intentionally lighter than `.chip` so the hierarchy reads
+   main → sub at a glance. Smaller, softer surface, quieter active state. */
+.subchip {
+	@apply ease-standard focus-visible:ring-emerald-500 gap-1.5 px-3 py-1.5 text-xs font-medium dark:focus-visible:ring-offset-stone-950 inline-flex shrink-0 items-center rounded-full whitespace-nowrap transition-all duration-150 focus-visible:ring-2 focus-visible:ring-offset-1;
+}
+.subchip-on {
+	@apply bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300;
+}
+.subchip-off {
+	@apply bg-stone-100 text-stone-500 hover:bg-stone-200 hover:text-stone-800 dark:bg-stone-800/70 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-200;
+}
+
+/* Consistent content entrance — applied to every list/grid container so each
+   page reveals identically (cross-browser, unlike the Chromium-only View
+   Transition). Cards rise + fade with a short capped cascade. Disabled by the
+   global prefers-reduced-motion block below. */
+@keyframes card-rise {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+/* `backwards` (not `both`): the hidden start state applies only during the
+   per-item delay, then the element is released after the run so its own
+   `:hover` transforms (e.g. card lift) are not suppressed by a filled animation. */
+.stagger > * {
+	animation: card-rise 0.42s var(--ease-decelerate) backwards;
+}
+.stagger > *:nth-child(1) {
+	animation-delay: 0.02s;
+}
+.stagger > *:nth-child(2) {
+	animation-delay: 0.05s;
+}
+.stagger > *:nth-child(3) {
+	animation-delay: 0.08s;
+}
+.stagger > *:nth-child(4) {
+	animation-delay: 0.11s;
+}
+.stagger > *:nth-child(5) {
+	animation-delay: 0.14s;
+}
+.stagger > *:nth-child(6) {
+	animation-delay: 0.17s;
+}
+.stagger > *:nth-child(7) {
+	animation-delay: 0.2s;
+}
+.stagger > *:nth-child(8) {
+	animation-delay: 0.23s;
+}
+.stagger > *:nth-child(n + 9) {
+	animation-delay: 0.26s;
+}
+
+/* Fine film-grain — applied as a decorative overlay div for premium texture. */
+.noise-overlay {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+	background-repeat: repeat;
+}
+
+/* Slow, calm rotation for the giant khatam-star ornament. */
+@keyframes khatam-drift {
+	to {
+		transform: rotate(360deg);
+	}
+}
+.khatam-spin {
+	animation: khatam-drift 180s linear infinite;
+	transform-origin: center;
+}
+
+/* ── Arabic verse typography ──────────────────────────────────────────────── */
+.verse-text {
+	font-family: 'Cairo', 'Amiri', Georgia, serif;
+	direction: rtl;
+	@apply text-xl leading-loose text-stone-900 dark:text-stone-50 text-right;
+}
+
+/* ── App shell ─────────────────────────────────────────────────────────────── */
+.app-main {
+	@apply ease-standard transition-[margin] duration-300;
+	margin-inline-start: 0;
+}
+
+/* Must use the SAME unit as Tailwind's `md` breakpoint (48rem), not 768px.
+   The sidebar (`md:flex`) and bottom-nav (`md:hidden`) toggle on a rem-based
+   query; if this content offset switched on a px query instead, a non-16px
+   root font-size (browser zoom / OS font scaling) opens a seam around ~760px
+   where the fixed sidebar is already shown but the content still has no
+   margin — so the sidebar overlaps the top of the cards. Keeping both in rem
+   makes them switch in lockstep at every zoom / font-scale setting. */
+@media (min-width: 48rem) {
+	.app-main {
+		margin-inline-start: var(--sidebar-w, 220px);
+	}
+}
+
+/* Audio player accent */
+audio {
+	accent-color: #047857;
+}
+
+/* Scroll suppression for filter chips */
+.scrollbar-none {
+	scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+	display: none;
+}
+
+/* Content prose */
+.content-prose p {
+	@apply text-stone-500 dark:text-stone-400 mb-4 last:mb-0 leading-[1.9];
+}
+
+/* ── View Transition cross-fade ───────────────────────────────────────────── */
+@keyframes vt-fade-in {
+	from {
+		opacity: 0;
+		translate: 0 6px;
+	}
+	to {
+		opacity: 1;
+		translate: 0 0;
+	}
+}
+
+::view-transition-new(root) {
+	animation: 280ms var(--ease-decelerate) vt-fade-in;
+}
+::view-transition-old(root) {
+	animation: 120ms var(--ease-accelerate) both fade-out;
+}
+
+@keyframes fade-out {
+	to {
+		opacity: 0;
+	}
+}
+
+/* Keep persistent UI elements from re-animating on navigation */
+::view-transition-group(bottom-nav),
+::view-transition-group(sidebar) {
+	animation: none;
+}
+
+/* ── Reduced motion ────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	.shimmer::after {
+		animation: none;
+	}
+
+	/* Staggered reveals appear instantly (no delayed hidden flash) for users
+	   who prefer reduced motion. */
+	.stagger > * {
+		animation: none !important;
+	}
+
+	::view-transition-new(root),
+	::view-transition-old(root) {
+		animation: none;
+	}
+}

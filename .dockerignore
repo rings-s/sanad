@@ -1,0 +1,38 @@
+# Keep the backend build context lean and free of secrets / local cruft.
+
+# Secrets & local state
+**/.env
+**/.env.*
+!**/.env.example
+backend/db.sqlite3
+backend/media/
+backend/staticfiles/
+
+# Python
+**/__pycache__/
+**/*.py[cod]
+.venv/
+venv/
+.rivex_venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Frontend (built as its own image — not part of the backend context)
+frontend/
+
+# Git / CI / editor / docs
+.git/
+.github/
+.gitignore
+.idea/
+.vscode/
+docs/
+*.md
+!README.md
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
