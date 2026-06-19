@@ -26,7 +26,9 @@ primary_region = "fra"
 
 [processes]
   # 2 uvicorn workers fits comfortably in 512MB; scale with `fly scale`.
-  web = "gunicorn backend.asgi:application --worker-class uvicorn.workers.UvicornWorker --workers 2 --bind 0.0.0.0:8000 --timeout 60 --keepalive 5 --access-logfile - --error-logfile -"
+  # Absolute path to the venv binary — a [processes] override isn't resolved
+  # against the image's PATH, so `gunicorn` alone fails to spawn.
+  web = "/app/.venv/bin/gunicorn backend.asgi:application --worker-class uvicorn.workers.UvicornWorker --workers 2 --bind 0.0.0.0:8000 --timeout 60 --keep-alive 5 --access-logfile - --error-logfile -"
 
 [http_service]
   internal_port = 8000

@@ -6,6 +6,11 @@ WORKDIR /build
 # Install uv for fast dependency resolution
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
+# Build the venv at its FINAL runtime path so console-script shebangs
+# (gunicorn, celery, …) point at an interpreter that exists in the production
+# image. Building under /build/.venv would bake in a broken /build shebang.
+ENV UV_PROJECT_ENVIRONMENT=/app/.venv
+
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
@@ -18,8 +23,8 @@ RUN addgroup --system sanad && adduser --system --ingroup sanad sanad
 
 WORKDIR /app
 
-# Copy virtual environment from builder
-COPY --from=builder /build/.venv /app/.venv
+# Copy virtual environment from builder (already at /app/.venv with correct shebangs)
+COPY --from=builder /app/.venv /app/.venv
 
 # Copy application code
 COPY backend/ ./
@@ -44,6 +49,6 @@ CMD ["gunicorn", "backend.asgi:application", \
      "--workers", "4", \
      "--bind", "0.0.0.0:8000", \
      "--timeout", "30", \
-     "--keepalive", "5", \
+     "--keep-alive", "5", \
      "--access-logfile", "-", \
      "--error-logfile", "-"]

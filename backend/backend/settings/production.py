@@ -50,6 +50,10 @@ DATABASES = {
         conn_health_checks=True,
     )
 }
+# Managed Postgres providers (e.g. Fly's PgBouncer in transaction-pooling mode)
+# are incompatible with psycopg3's server-side prepared statements. Disabling
+# auto-prepare keeps pooled connections working; harmless on direct connections.
+DATABASES['default'].setdefault('OPTIONS', {})['prepare_threshold'] = None
 
 # ── Cache: Redis ──────────────────────────────────────────────────────────────
 CACHES = {
