@@ -99,7 +99,9 @@ GOOGLE_CLIENT_SECRET = config("GOOGLE_CLIENT_SECRET", default="")
 AUTH_COOKIE_NAME = "sanad_refresh"
 # Secure=True requires HTTPS — set to True in production via environment variable.
 AUTH_COOKIE_SECURE = config("AUTH_COOKIE_SECURE", default="False") == "True"
-AUTH_COOKIE_SAMESITE = "Lax"
+# "None" (with Secure=True) is required when the frontend is served from a
+# different site than the API (e.g. a Cloudflare Tunnel domain → Fly backend).
+AUTH_COOKIE_SAMESITE = config("AUTH_COOKIE_SAMESITE", default="Lax")
 AUTH_COOKIE_PATH = "/api/v1/auth/"
 AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # matches SIMPLE_JWT REFRESH_TOKEN_LIFETIME
 
