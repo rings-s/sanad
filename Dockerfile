@@ -14,6 +14,10 @@ ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
+# WhiteNoise serves Django's static files (admin, DRF, Swagger UI) in production.
+# Installed directly into the venv to avoid regenerating uv.lock.
+RUN VIRTUAL_ENV=/app/.venv uv pip install whitenoise
+
 
 # ── Stage 2: production image ─────────────────────────────────────────────────
 FROM python:3.13-slim AS production
@@ -35,8 +39,13 @@ ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=backend.settings.production
 
-# Collect static files (S3 bucket must be configured for media; static goes to /app/staticfiles)
-RUN python manage.py collectstatic --noinput --clear 2>/dev/null || true
+# Collect + compress static into /app/staticfiles for WhiteNoise. Must succeed so
+# the manifest exists (admin pages 500 without it). Dummy env satisfies settings
+# import at build time; collectstatic does not touch the database.
+RUN DJANGO_SECRET_KEY=build-only-not-used \
+    DATABASE_URL=postgres://u:p@localhost:5432/db \
+    REDIS_URL=redis://localhost:6379/0 \
+    python manage.py collectstatic --noinput
 
 USER sanad
 

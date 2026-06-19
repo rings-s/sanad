@@ -31,6 +31,15 @@ SECRET_KEY = config('DJANGO_SECRET_KEY')
 DEBUG = False
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=Csv())
 
+# Django 4+ verifies the Origin/Referer of unsafe requests (e.g. the admin login
+# POST) against trusted origins. Behind Fly's TLS proxy this must list the HTTPS
+# origin(s) explicitly, or the admin returns 403 CSRF.
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default=','.join(f'https://{h}' for h in ALLOWED_HOSTS if h and '*' not in h),
+    cast=Csv(),
+)
+
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
@@ -72,6 +81,19 @@ CACHES = {
     }
 }
 
+# ── Static files: WhiteNoise (served by the app; compressed + hashed) ─────────
+# WhiteNoise is installed in the Docker image (see Dockerfile) rather than the
+# locked deps. It serves /static/ (admin, DRF, Swagger UI) without a separate
+# web server, so the admin renders with full styling.
+MIDDLEWARE.insert(  # noqa: F405
+    MIDDLEWARE.index('django.middleware.security.SecurityMiddleware') + 1,  # noqa: F405
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+)
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
+}
+
 # ── File Storage: S3 (thumbnails / audio only — videos go to YouTube) ─────────
 _bucket = config('AWS_STORAGE_BUCKET_NAME', default='')
 if _bucket:
@@ -86,10 +108,8 @@ if _bucket:
     AWS_QUERYSTRING_AUTH = True
     AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default='')
 
-    STORAGES = {
-        'default': {'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'},
-        'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
-    }
+    # Only media goes to S3; static stays on WhiteNoise.
+    STORAGES['default'] = {'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'}
     _cdn = AWS_S3_CUSTOM_DOMAIN or f"{_bucket}.s3.amazonaws.com"
     MEDIA_URL = f"https://{_cdn}/media/"
 
