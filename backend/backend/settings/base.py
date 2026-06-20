@@ -10,7 +10,7 @@ Rules:
 from datetime import timedelta
 from pathlib import Path
 
-from decouple import config, Csv
+from decouple import config
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # …/backend/
@@ -103,7 +103,7 @@ AUTH_COOKIE_SECURE = config("AUTH_COOKIE_SECURE", default="False") == "True"
 # different site than the API (e.g. a Cloudflare Tunnel domain → Fly backend).
 AUTH_COOKIE_SAMESITE = config("AUTH_COOKIE_SAMESITE", default="Lax")
 AUTH_COOKIE_PATH = "/api/v1/auth/"
-AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # matches SIMPLE_JWT REFRESH_TOKEN_LIFETIME
+AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 365  # matches SIMPLE_JWT REFRESH_TOKEN_LIFETIME
 
 # Public URL of the SvelteKit front-end — used to build password-reset and
 # email-verification links sent in transactional emails.
@@ -146,7 +146,7 @@ REST_FRAMEWORK = {
 # ── Simple JWT ────────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
