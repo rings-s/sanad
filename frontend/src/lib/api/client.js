@@ -2,7 +2,9 @@ import { browser } from '$app/environment';
 import { get } from 'svelte/store';
 import { auth } from '../stores/auth.js';
 
-const BASE_URL = (browser && import.meta.env.VITE_API_URL) || 'http://localhost:8000';
+// All API calls are same-origin and proxied to the backend by hooks.server.js,
+// so the refresh cookie stays first-party. Empty base = relative `/api/...` URLs.
+const BASE_URL = '';
 
 /**
  * Unwrap the Sanad API envelope.

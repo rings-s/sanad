@@ -47,8 +47,8 @@ function createAuthStore() {
 			set({ user, token: null, loading: true });
 
 			try {
-				const apiBase = (browser && import.meta.env.VITE_API_URL) || 'http://localhost:8000';
-				const res = await fetch(`${apiBase}/api/v1/auth/token/refresh/cookie/`, {
+				// Same-origin (proxied by hooks.server.js → first-party refresh cookie).
+				const res = await fetch('/api/v1/auth/token/refresh/cookie/', {
 					method: 'POST',
 					credentials: 'include',
 					headers: { 'Content-Type': 'application/json' },
